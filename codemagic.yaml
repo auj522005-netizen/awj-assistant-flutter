@@ -27,9 +27,9 @@ workflows:
             echo "keyAlias=$CM_KEY_ALIAS" >> "$CM_BUILD_DIR/android/key.properties"
             echo "storeFile=$CM_KEYSTORE_PATH" >> "$CM_BUILD_DIR/android/key.properties"
           fi
-      - name: Inject API keys into .env
+      - name: Inject API keys into .env (backup for dotenv)
         script: |
-          cat > "$CM_BUILD_DIR/.env" << ENVEOF
+          cat > "$CM_BUILD_DIR/.env" << 'ENVEOF'
           GEMINI_API_KEY=${GEMINI_API_KEY:-}
           GROQ_API_KEY=${GROQ_API_KEY:-}
           CEREBRAS_API_KEY=${CEREBRAS_API_KEY:-}
@@ -49,15 +49,53 @@ workflows:
           FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
           FIREBASE_APP_ID=${FIREBASE_APP_ID:-}
           ENVEOF
+          # Remove any leading/trailing whitespace from keys
+          sed -i 's/^[[:space:]]*//' "$CM_BUILD_DIR/.env"
       - name: Get Flutter packages
         script: |
           flutter packages pub get
-      - name: Build APK
+      - name: Build APK with API keys via dart-define
         script: |
-          flutter build apk --release
-      - name: Build AAB
+          flutter build apk --release \
+            --dart-define=GEMINI_API_KEY="${GEMINI_API_KEY:-}" \
+            --dart-define=GROQ_API_KEY="${GROQ_API_KEY:-}" \
+            --dart-define=CEREBRAS_API_KEY="${CEREBRAS_API_KEY:-}" \
+            --dart-define=OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}" \
+            --dart-define=OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
+            --dart-define=BIGMODEL_API_KEY="${BIGMODEL_API_KEY:-}" \
+            --dart-define=MEM0_API_KEY="${MEM0_API_KEY:-}" \
+            --dart-define=TAVILY_API_KEY="${TAVILY_API_KEY:-}" \
+            --dart-define=TAVILY_MCP_KEY="${TAVILY_MCP_KEY:-}" \
+            --dart-define=ELEVENLABS_API_KEY="${ELEVENLABS_API_KEY:-}" \
+            --dart-define=GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
+            --dart-define=NOTION_TOKEN="${NOTION_TOKEN:-}" \
+            --dart-define=YOUTUBE_API_KEY="${YOUTUBE_API_KEY:-}" \
+            --dart-define=GMAIL_CLIENT_ID="${GMAIL_CLIENT_ID:-}" \
+            --dart-define=GMAIL_CLIENT_SECRET="${GMAIL_CLIENT_SECRET:-}" \
+            --dart-define=FIREBASE_API_KEY="${FIREBASE_API_KEY:-}" \
+            --dart-define=FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID:-}" \
+            --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}"
+      - name: Build AAB with API keys via dart-define
         script: |
-          flutter build appbundle --release
+          flutter build appbundle --release \
+            --dart-define=GEMINI_API_KEY="${GEMINI_API_KEY:-}" \
+            --dart-define=GROQ_API_KEY="${GROQ_API_KEY:-}" \
+            --dart-define=CEREBRAS_API_KEY="${CEREBRAS_API_KEY:-}" \
+            --dart-define=OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}" \
+            --dart-define=OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
+            --dart-define=BIGMODEL_API_KEY="${BIGMODEL_API_KEY:-}" \
+            --dart-define=MEM0_API_KEY="${MEM0_API_KEY:-}" \
+            --dart-define=TAVILY_API_KEY="${TAVILY_API_KEY:-}" \
+            --dart-define=TAVILY_MCP_KEY="${TAVILY_MCP_KEY:-}" \
+            --dart-define=ELEVENLABS_API_KEY="${ELEVENLABS_API_KEY:-}" \
+            --dart-define=GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
+            --dart-define=NOTION_TOKEN="${NOTION_TOKEN:-}" \
+            --dart-define=YOUTUBE_API_KEY="${YOUTUBE_API_KEY:-}" \
+            --dart-define=GMAIL_CLIENT_ID="${GMAIL_CLIENT_ID:-}" \
+            --dart-define=GMAIL_CLIENT_SECRET="${GMAIL_CLIENT_SECRET:-}" \
+            --dart-define=FIREBASE_API_KEY="${FIREBASE_API_KEY:-}" \
+            --dart-define=FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID:-}" \
+            --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}"
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/*.aab

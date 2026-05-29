@@ -1,7 +1,7 @@
 name: owj_assistant
 description: "أوج - مساعدك الذكي بالعربي المصري"
 publish_to: 'none'
-version: 2.2.0+5
+version: 2.3.0+6
 
 environment:
   sdk: ^3.7.2
@@ -67,5 +67,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # Note: .env file is optional and generated at build time by Codemagic
-  # For local development, create .env manually from .env.example
+  assets:
+    - .env
+  # Note: .env file is optional for local dev (create from .env.example).
+  # For Codemagic builds, API keys are injected via --dart-define flags
+  # which are baked into the binary at compile time (more reliable).
+  # The .env asset is a backup source for flutter_dotenv.

@@ -3,39 +3,87 @@
 /// ═══════════════════════════════════════════════════════════════════════════════
 ///
 /// Centralized storage for all API keys used across the app.
-/// Reads from environment variables via `flutter_dotenv`.
+/// Reads from THREE sources in priority order:
+///   1. `--dart-define` compile-time constants (Codemagic builds)
+///   2. `flutter_dotenv` .env file (local development)
+///   3. `Platform.environment` system env vars (fallback)
 ///
 /// **Security Note:** Never commit real API keys to version control.
-/// Use `.env` file for local development, and Codemagic environment
-/// variables for CI/CD builds.
-///
-/// Usage:
-///   await dotenv.load(fileName: ".env");
-///   final key = ApiKeys.gemini;
+/// Use `.env` file for local development, and Codemagic `--dart-define`
+/// flags for CI/CD builds.
 ///
 /// ═══════════════════════════════════════════════════════════════════════════════
 
 library;
+
+import 'dart:io';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiKeys {
   ApiKeys._();
 
-  // ─── Environment Variable Helper ─────────────────────────────────────────
+  // ─── Multi-Source Key Reader ─────────────────────────────────────────────
   //
-  // Reads a value from dotenv first; falls back to empty string.
-  // All keys must be provided via .env file or Codemagic environment variables.
+  // Priority: dart-define (compile-time) > dotenv (asset) > Platform.environment
+  //
+  // In Codemagic builds, --dart-define flags bake the keys into the binary.
+  // In local dev, .env file provides the keys.
+  // Platform.environment is a last resort for desktop/emulator testing.
 
   static String _env(String key) {
+    // 1. Try compile-time --dart-define (always available, baked into binary)
+    // We can't use const String.fromEnvironment directly in a getter,
+    // so we use a static map populated at class initialization.
+    final compileTime = _dartDefines[key];
+    if (compileTime != null && compileTime.isNotEmpty) return compileTime;
+
+    // 2. Try dotenv (.env file bundled as asset)
     try {
       final value = dotenv.env[key];
       if (value != null && value.isNotEmpty) return value;
     } catch (_) {
       // dotenv not loaded yet
     }
+
+    // 3. Try Platform.environment (system env vars)
+    try {
+      final value = Platform.environment[key];
+      if (value != null && value.isNotEmpty) return value;
+    } catch (_) {
+      // Platform not available
+    }
+
     return '';
   }
+
+  // ─── Compile-Time Defines (from --dart-define flags) ──────────────────────
+  //
+  // These are populated by Codemagic at build time via:
+  //   flutter build apk --dart-define=GEMINI_API_KEY=xxx ...
+  //
+  // String.fromEnvironment MUST be const, so we read them once into a map.
+
+  static final Map<String, String> _dartDefines = {
+    'GEMINI_API_KEY': const String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''),
+    'GROQ_API_KEY': const String.fromEnvironment('GROQ_API_KEY', defaultValue: ''),
+    'CEREBRAS_API_KEY': const String.fromEnvironment('CEREBRAS_API_KEY', defaultValue: ''),
+    'OPENROUTER_API_KEY': const String.fromEnvironment('OPENROUTER_API_KEY', defaultValue: ''),
+    'OPENAI_API_KEY': const String.fromEnvironment('OPENAI_API_KEY', defaultValue: ''),
+    'BIGMODEL_API_KEY': const String.fromEnvironment('BIGMODEL_API_KEY', defaultValue: ''),
+    'MEM0_API_KEY': const String.fromEnvironment('MEM0_API_KEY', defaultValue: ''),
+    'TAVILY_API_KEY': const String.fromEnvironment('TAVILY_API_KEY', defaultValue: ''),
+    'TAVILY_MCP_KEY': const String.fromEnvironment('TAVILY_MCP_KEY', defaultValue: ''),
+    'ELEVENLABS_API_KEY': const String.fromEnvironment('ELEVENLABS_API_KEY', defaultValue: ''),
+    'GITHUB_TOKEN': const String.fromEnvironment('GITHUB_TOKEN', defaultValue: ''),
+    'NOTION_TOKEN': const String.fromEnvironment('NOTION_TOKEN', defaultValue: ''),
+    'YOUTUBE_API_KEY': const String.fromEnvironment('YOUTUBE_API_KEY', defaultValue: ''),
+    'GMAIL_CLIENT_ID': const String.fromEnvironment('GMAIL_CLIENT_ID', defaultValue: ''),
+    'GMAIL_CLIENT_SECRET': const String.fromEnvironment('GMAIL_CLIENT_SECRET', defaultValue: ''),
+    'FIREBASE_API_KEY': const String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    'FIREBASE_PROJECT_ID': const String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: ''),
+    'FIREBASE_APP_ID': const String.fromEnvironment('FIREBASE_APP_ID', defaultValue: ''),
+  };
 
   // ─── AI Provider Keys ─────────────────────────────────────────────────────
 
@@ -185,6 +233,24 @@ class ApiKeys {
     }
   }
 
+  /// Check which key source is active for a given key
+  static String keySource(String key) {
+    if (_dartDefines[key] != null && _dartDefines[key]!.isNotEmpty) {
+      return 'dart-define';
+    }
+    try {
+      if (dotenv.env[key] != null && dotenv.env[key]!.isNotEmpty) {
+        return '.env';
+      }
+    } catch (_) {}
+    try {
+      if (Platform.environment[key] != null && Platform.environment[key]!.isNotEmpty) {
+        return 'platform';
+      }
+    } catch (_) {}
+    return 'none';
+  }
+
   static Map<String, String> debugMasked() {
     String mask(String value) {
       if (value.isEmpty) return '<not set>';
@@ -192,18 +258,15 @@ class ApiKeys {
       return '${value.substring(0, 8)}...${value.substring(value.length - 4)}';
     }
     return {
-      'gemini': mask(gemini),
-      'groq': mask(groq),
-      'bigModel': mask(bigModel),
-      'openRouter': mask(openRouter),
-      'openai': mask(openai),
-      'cerebras': mask(cerebras),
-      'mem0': mask(mem0),
-      'tavily': mask(tavily),
-      'elevenLabs': mask(elevenLabs),
-      'github': mask(github),
-      'notion': mask(notion),
-      'youtube': mask(youtube),
+      'gemini': '${mask(gemini)} [${keySource('GEMINI_API_KEY')}]',
+      'groq': '${mask(groq)} [${keySource('GROQ_API_KEY')}]',
+      'bigModel': '${mask(bigModel)} [${keySource('BIGMODEL_API_KEY')}]',
+      'openRouter': '${mask(openRouter)} [${keySource('OPENROUTER_API_KEY')}]',
+      'openai': '${mask(openai)} [${keySource('OPENAI_API_KEY')}]',
+      'cerebras': '${mask(cerebras)} [${keySource('CEREBRAS_API_KEY')}]',
+      'mem0': '${mask(mem0)} [${keySource('MEM0_API_KEY')}]',
+      'tavily': '${mask(tavily)} [${keySource('TAVILY_API_KEY')}]',
+      'elevenLabs': '${mask(elevenLabs)} [${keySource('ELEVENLABS_API_KEY')}]',
     };
   }
 }

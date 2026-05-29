@@ -27,10 +27,10 @@ class AppConfig {
   static const String appTaglineAr = 'أوج — مساعدك الذكي المصري';
 
   /// Current version
-  static const String version = '2.2.0';
+  static const String version = '2.3.0';
 
   /// Build number
-  static const int buildNumber = 5;
+  static const int buildNumber = 6;
 
   /// Default locale
   static const String defaultLocale = 'ar_EG';

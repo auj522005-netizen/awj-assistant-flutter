@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:owj_assistant/config/app_config.dart';
+import 'package:owj_assistant/config/api_keys.dart';
 import 'package:owj_assistant/config/theme.dart';
 import 'package:owj_assistant/models/ai_model.dart';
 import 'package:owj_assistant/providers/app_provider.dart';
@@ -567,13 +568,20 @@ class _AboutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SettingsTile(
       title: 'أوج — مساعدك الذكي المصري',
-      subtitle: 'الإصدار ${AppConfig.version}',
+      subtitle: 'v${AppConfig.version} (${AppConfig.buildNumber})',
       icon: Icons.star_rounded,
       onTap: () {
+        // Show API key status for debugging
+        final debug = ApiKeys.debugMasked();
+        final configCount = ApiKeys.configuredProviders;
+        debugPrint('=== أوج API Keys Debug ===');
+        debug.forEach((k, v) => debugPrint('  $k: $v'));
+        debugPrint('Configured providers: $configCount');
+
         showAboutDialog(
           context: context,
           applicationName: AppConfig.appNameAr,
-          applicationVersion: AppConfig.version,
+          applicationVersion: 'v${AppConfig.version} (${AppConfig.buildNumber})',
           applicationIcon: Container(
             width: 48,
             height: 48,
@@ -584,10 +592,11 @@ class _AboutTile extends StatelessWidget {
             child: const Center(child: Text('🌟', style: TextStyle(fontSize: 24))),
           ),
           children: [
-            const Text(
+            Text(
               'أوج هو مساعد ذكي مصري بيتكلم مصري وبيفهمك.\n'
-              'بيستخدم أحدث موديلات الذكاء الاصطناعي عشان يساعدك في حياتك اليومية.',
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 13),
+              'بيستخدم أحدث موديلات الذكاء الاصطناعي عشان يساعدك في حياتك اليومية.\n\n'
+              'المزودين المتصلين: ${configCount.isEmpty ? "لا يوجد" : configCount.join("، ")}',
+              style: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
               textDirection: TextDirection.rtl,
             ),
           ],
