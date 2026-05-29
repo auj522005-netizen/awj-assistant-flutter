@@ -62,7 +62,7 @@ class AIRouter {
       'gemini': 'gemini-2.5-flash',
       'groq': 'llama-4-scout-17b',
       'openrouter': 'deepseek-v3',
-      'bigmodel': 'glm-4-flash',
+      'bigmodel': 'glm-5-turbo',
       'openai': 'gpt-4o-mini',
     },
     TaskType.deepAnalysis: {

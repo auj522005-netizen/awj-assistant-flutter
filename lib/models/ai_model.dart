@@ -424,7 +424,7 @@ class ModelConfig {
     this.patternModel = 'groq:meta-llama/llama-4-scout-17b-16e-instruct',
     this.weeklyReportModel = 'openrouter:deepseek/deepseek-chat-v3-0324:free',
     this.batchModel = 'groq:qwen/qwen3-32b',
-    this.longContextModel = 'bigmodel:glm-4-long',
+    this.longContextModel = 'bigmodel:glm-5-turbo',
     this.autoFallback = true,
     this.fallbackOrder = const [
       'gemini',
@@ -494,7 +494,7 @@ class ModelConfig {
             'openrouter:deepseek/deepseek-chat-v3-0324:free',
         batchModel: json['batchModel'] as String? ?? 'groq:qwen/qwen3-32b',
         longContextModel:
-            json['longContextModel'] as String? ?? 'bigmodel:glm-4-long',
+            json['longContextModel'] as String? ?? 'bigmodel:glm-5-turbo',
         autoFallback: json['autoFallback'] as bool? ?? true,
         fallbackOrder: (json['fallbackOrder'] as List<dynamic>?)
                 ?.map((e) => e as String)

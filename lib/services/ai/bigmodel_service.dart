@@ -11,7 +11,7 @@ import 'package:owj_assistant/models/ai_model.dart';
 /// BigModel / ZhipuAI API service for the OWJ Assistant.
 ///
 /// Supports chat models: glm-5.1, glm-5-turbo, glm-5, glm-4.7,
-/// glm-4.5-air, glm-4-flash, glm-4-long.
+/// glm-4.6, glm-4.5, glm-4.5-air.
 /// Also supports TTS for Arabic content.
 class BigModelService {
   BigModelService({Dio? dio})
@@ -35,8 +35,28 @@ class BigModelService {
   static List<AIModel> get supportedModels =>
       getModelsByProvider(AIProvider.bigmodel);
 
+  /// Confirmed available BigModel chat model IDs.
+  static const String modelGlm51 = 'glm-5.1';
+  static const String modelGlm5Turbo = 'glm-5-turbo';
+  static const String modelGlm5 = 'glm-5';
+  static const String modelGlm47 = 'glm-4.7';
+  static const String modelGlm46 = 'glm-4.6';
+  static const String modelGlm45 = 'glm-4.5';
+  static const String modelGlm45Air = 'glm-4.5-air';
+
+  /// All confirmed available model IDs.
+  static const List<String> availableModels = [
+    modelGlm51,
+    modelGlm5Turbo,
+    modelGlm5,
+    modelGlm47,
+    modelGlm46,
+    modelGlm45,
+    modelGlm45Air,
+  ];
+
   /// Default model for general use.
-  static const String defaultModel = 'glm-4-flash';
+  static const String defaultModel = 'glm-5-turbo';
 
   /// Default TTS voice.
   static const String defaultVoice = 'male-qn-qingse';
@@ -304,7 +324,7 @@ class BigModelService {
             content: 'مرحبا، قل مرحبا بكلمة واحدة',
           ),
         ],
-        model: 'glm-4-flash',
+        model: 'glm-5-turbo',
         maxTokens: 50,
       );
       stopwatch.stop();

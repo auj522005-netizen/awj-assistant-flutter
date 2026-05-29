@@ -9,6 +9,8 @@ import 'package:owj_assistant/services/voice/elevenlabs_tts_service.dart';
 /// STT: Uses Groq Whisper for transcription.
 /// TTS: 4-level fallback chain:
 ///   1. ElevenLabs → 2. OpenAI TTS → 3. BigModel GLM-4 Voice → 4. System TTS (flutter_tts)
+///
+/// Supports language-aware voice selection and Arabic-optimized profiles.
 class VoiceService {
   VoiceService({Dio? dio, ElevenLabsTtsService? elevenLabsService})
       : _dio = dio ?? Dio(BaseOptions(
@@ -22,12 +24,57 @@ class VoiceService {
 
   bool _isSpeaking = false;
   String? _currentProvider;
+  String _currentLanguage = 'ar'; // Default to Arabic
+  TtsProvider _preferredProvider = TtsProvider.elevenLabs;
 
   /// Whether TTS is currently speaking.
   bool get isSpeaking => _isSpeaking;
 
   /// The currently active TTS provider name.
   String? get currentProvider => _currentProvider;
+
+  /// The currently active language code.
+  String get currentLanguage => _currentLanguage;
+
+  /// The preferred TTS provider (used as first choice in fallback chain).
+  TtsProvider get preferredProvider => _preferredProvider;
+
+  /// The underlying ElevenLabs service instance for direct access.
+  ElevenLabsTtsService get elevenLabsService => _elevenLabsService;
+
+  // ── Provider switching ──
+
+  /// Switches the preferred TTS provider.
+  ///
+  /// This changes the first provider tried in the fallback chain.
+  /// Use this to switch between ElevenLabs (high quality) and
+  /// flutter_tts (offline/system fallback) as the primary provider.
+  void setPreferredProvider(TtsProvider provider) {
+    _preferredProvider = provider;
+  }
+
+  /// Switches to ElevenLabs as the TTS provider (online, high quality).
+  void switchToElevenLabs() {
+    _preferredProvider = TtsProvider.elevenLabs;
+  }
+
+  /// Switches to system TTS (flutter_tts) as the provider (offline fallback).
+  void switchToSystemTts() {
+    _preferredProvider = TtsProvider.system;
+  }
+
+  /// Sets the language for voice synthesis.
+  void setLanguage(String languageCode) {
+    _currentLanguage = languageCode;
+  }
+
+  /// Sets the Arabic voice profile for ElevenLabs synthesis.
+  void setArabicVoiceProfile(ArabicVoiceProfile profile) {
+    _elevenLabsService.setArabicVoiceProfile(profile);
+  }
+
+  /// Gets the current Arabic voice profile.
+  ArabicVoiceProfile get arabicVoiceProfile => _elevenLabsService.arabicVoiceProfile;
 
   // ── STT: Speech-to-Text ──
 
@@ -95,26 +142,30 @@ class VoiceService {
   /// Speaks [text] using the specified [provider] or auto-selects
   /// the best available provider from the fallback chain.
   ///
-  /// The fallback chain is:
-  ///   1. ElevenLabs (highest quality)
-  ///   2. OpenAI TTS
-  ///   3. BigModel GLM-4 Voice
-  ///   4. System TTS (flutter_tts)
-  Future<TtsResult> speak(String text, {TtsProvider? provider}) async {
+  /// The fallback chain starts with the [preferredProvider] and falls
+  /// through other providers in order:
+  ///   1. Preferred provider (default: ElevenLabs)
+  ///   2. ElevenLabs (highest quality)
+  ///   3. OpenAI TTS
+  ///   4. BigModel GLM-4 Voice
+  ///   5. System TTS (flutter_tts)
+  ///
+  /// If [languageCode] is provided, it is used to select the best voice
+  /// for that language. Otherwise, [_currentLanguage] is used.
+  Future<TtsResult> speak(String text, {TtsProvider? provider, String? languageCode}) async {
     if (_isSpeaking) {
       await stopSpeaking();
     }
 
     _isSpeaking = true;
+    final lang = languageCode ?? _currentLanguage;
 
-    // Determine provider order
-    final providers = provider != null
-        ? [provider]
-        : [TtsProvider.elevenLabs, TtsProvider.openAI, TtsProvider.bigModel, TtsProvider.system];
+    // Determine provider order — start with preferred, then fall through
+    final providers = _buildProviderOrder(provider);
 
     for (final p in providers) {
       try {
-        final result = await _speakWithProvider(text, p);
+        final result = await _speakWithProvider(text, p, languageCode: lang);
         _currentProvider = p.name;
         return result;
       } catch (_) {
@@ -127,6 +178,43 @@ class VoiceService {
     throw VoiceException('All TTS providers failed');
   }
 
+  /// Speaks [text] using Arabic-optimized voice settings via ElevenLabs.
+  ///
+  /// Convenience method that automatically selects the current Arabic voice
+  /// profile and optimized settings for Arabic pronunciation.
+  Future<TtsResult> speakArabic(
+    String text, {
+    ArabicVoiceProfile? voiceProfile,
+    ArabicVoiceSettings? settings,
+  }) async {
+    if (_isSpeaking) {
+      await stopSpeaking();
+    }
+
+    _isSpeaking = true;
+
+    try {
+      final audioBytes = await _elevenLabsService.synthesizeArabic(
+        text,
+        voiceProfile: voiceProfile,
+        settings: settings,
+      );
+
+      _currentProvider = TtsProvider.elevenLabs.name;
+      return TtsResult(
+        provider: TtsProvider.elevenLabs,
+        audioBytes: audioBytes,
+        text: text,
+        success: true,
+        languageCode: 'ar',
+        voiceName: (voiceProfile ?? _elevenLabsService.arabicVoiceProfile).defaultVoiceName,
+      );
+    } on ElevenLabsException catch (_) {
+      // Fall back to general speak method
+      return speak(text, languageCode: 'ar');
+    }
+  }
+
   /// Stops any currently playing speech.
   Future<void> stopSpeaking() async {
     _isSpeaking = false;
@@ -136,12 +224,30 @@ class VoiceService {
     // and flutter_tts engine. This is a service-level abstraction.
   }
 
+  // ── Private helpers ──
+
+  /// Builds the provider fallback order, starting with the preferred provider.
+  List<TtsProvider> _buildProviderOrder(TtsProvider? explicitProvider) {
+    if (explicitProvider != null) {
+      return [explicitProvider];
+    }
+
+    // Start with preferred, then add others in fallback order
+    final order = <TtsProvider>[_preferredProvider];
+    for (final p in TtsProvider.values) {
+      if (!order.contains(p)) {
+        order.add(p);
+      }
+    }
+    return order;
+  }
+
   // ── TTS provider implementations ──
 
-  Future<TtsResult> _speakWithProvider(String text, TtsProvider provider) async {
+  Future<TtsResult> _speakWithProvider(String text, TtsProvider provider, {String? languageCode}) async {
     switch (provider) {
       case TtsProvider.elevenLabs:
-        return _speakElevenLabs(text);
+        return _speakElevenLabs(text, languageCode: languageCode);
       case TtsProvider.openAI:
         return _speakOpenAI(text);
       case TtsProvider.bigModel:
@@ -151,16 +257,32 @@ class VoiceService {
     }
   }
 
-  Future<TtsResult> _speakElevenLabs(String text) async {
+  Future<TtsResult> _speakElevenLabs(String text, {String? languageCode}) async {
     if (!ApiKeys.hasElevenLabs) throw VoiceException('ElevenLabs not configured');
 
-    final audioBytes = await _elevenLabsService.synthesize(text);
-    // In real implementation: play audioBytes via audioplayers
+    final lang = languageCode ?? _currentLanguage;
+
+    // Use the best voice for the language
+    final voiceName = _elevenLabsService.getBestVoiceForLanguage(lang);
+
+    // Use Arabic-optimized settings for Arabic content
+    final bool isArabic = lang.toLowerCase().startsWith('ar');
+
+    final audioBytes = isArabic
+        ? await _elevenLabsService.synthesizeArabic(text)
+        : await _elevenLabsService.synthesize(
+            text,
+            voiceName: voiceName,
+            languageCode: lang,
+          );
+
     return TtsResult(
       provider: TtsProvider.elevenLabs,
       audioBytes: audioBytes,
       text: text,
       success: true,
+      languageCode: lang,
+      voiceName: voiceName,
     );
   }
 
@@ -288,12 +410,20 @@ class TtsResult {
   final bool success;
   final String? note;
 
+  /// The language code used for synthesis (e.g., 'ar', 'en').
+  final String? languageCode;
+
+  /// The voice name used for synthesis (e.g., 'Antoni', 'Rachel').
+  final String? voiceName;
+
   const TtsResult({
     required this.provider,
     required this.audioBytes,
     required this.text,
     required this.success,
     this.note,
+    this.languageCode,
+    this.voiceName,
   });
 }
 
