@@ -4,7 +4,7 @@
 ///
 /// Central configuration for the OWJ (أوج) app: app metadata, default model
 /// selections, AI task routing, and complete model definitions across all
-/// providers (30+ models).
+/// providers (35+ models).
 ///
 /// ═══════════════════════════════════════════════════════════════════════════════
 
@@ -27,10 +27,10 @@ class AppConfig {
   static const String appTaglineAr = 'أوج — مساعدك الذكي المصري';
 
   /// Current version
-  static const String version = '2.0.0';
+  static const String version = '2.1.0';
 
   /// Build number
-  static const int buildNumber = 1;
+  static const int buildNumber = 2;
 
   /// Default locale
   static const String defaultLocale = 'ar_EG';
@@ -108,11 +108,12 @@ const List<String> fallbackProviderOrder = [
   'bigmodel',
   'openrouter',
   'groq',
+  'cerebras',
   'gemini',
   'openai',
 ];
 
-// ─── Model Registry — 30+ Models Across All Providers ────────────────────────
+// ─── Model Registry — 35+ Models Across All Providers ────────────────────────
 
 /// All available AI models, organized by provider.
 /// Updated May 2026 with latest model releases.
@@ -311,6 +312,22 @@ final List<AIModel> allModels = [
     maxTokens: 131072,
     costPer1kTokens: 0.0,
     description: 'فائق السرعة — مثالي للمهام البسيطة والردود السريعة',
+  ),
+  const AIModel(
+    id: 'groq:groq/compound',
+    provider: AIProvider.groq,
+    modelId: 'groq/compound',
+    name: 'Groq Compound',
+    nameAr: 'جروك كومباوند',
+    tier: ModelTier.free,
+    speed: ModelSpeed.fast,
+    quality: ModelQuality.excellent,
+    supportsStreaming: true,
+    supportsVision: false,
+    contextWindow: '131K',
+    maxTokens: 131072,
+    costPer1kTokens: 0.0,
+    description: 'نظام عامل — بحث ويب وتنفيذ كود وأتمتة!',
   ),
 
   // ═══ BigModel (ZhipuAI) ════════════════════════════════════════════════════
@@ -635,6 +652,40 @@ final List<AIModel> allModels = [
     maxTokens: 131072,
     costPer1kTokens: 0.0,
     description: 'موديل ZhipuAI مجاني على أوبن روتر — ممتاز بالعربية',
+  ),
+
+  // ═══ Cerebras ══════════════════════════════════════════════════════════════
+  const AIModel(
+    id: 'cerebras:gpt-oss-120b',
+    provider: AIProvider.cerebras,
+    modelId: 'gpt-oss-120b',
+    name: 'GPT-OSS 120B (Cerebras)',
+    nameAr: 'GPT-OSS 120B سيريبراس',
+    tier: ModelTier.free,
+    speed: ModelSpeed.fast,
+    quality: ModelQuality.excellent,
+    supportsStreaming: true,
+    supportsVision: false,
+    contextWindow: '131K',
+    maxTokens: 131072,
+    costPer1kTokens: 0.0,
+    description: 'أسرع موديل على Cerebras — 3000 توكن/ثانية! 120B MoE',
+  ),
+  const AIModel(
+    id: 'cerebras:zai-glm-4.7',
+    provider: AIProvider.cerebras,
+    modelId: 'zai-glm-4.7',
+    name: 'GLM-4.7 (Cerebras)',
+    nameAr: 'GLM-4.7 سيريبراس',
+    tier: ModelTier.free,
+    speed: ModelSpeed.fast,
+    quality: ModelQuality.excellent,
+    supportsStreaming: true,
+    supportsVision: false,
+    contextWindow: '128K',
+    maxTokens: 128000,
+    costPer1kTokens: 0.0,
+    description: 'موديل ZhipuAI على Cerebras — 1000 توكن/ثانية (Preview)',
   ),
 
   // ═══ OpenAI (Premium) ══════════════════════════════════════════════════════

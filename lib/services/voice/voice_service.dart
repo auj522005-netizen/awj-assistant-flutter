@@ -7,8 +7,8 @@ import 'package:owj_assistant/services/voice/elevenlabs_tts_service.dart';
 /// Voice service combining STT (Speech-to-Text) and TTS (Text-to-Speech).
 ///
 /// STT: Uses Groq Whisper for transcription.
-/// TTS: 4-level fallback chain:
-///   1. ElevenLabs → 2. OpenAI TTS → 3. BigModel GLM-4 Voice → 4. System TTS (flutter_tts)
+/// TTS: 5-level fallback chain:
+///   1. Groq Orpheus Arabic → 2. ElevenLabs → 3. OpenAI TTS → 4. BigModel GLM-4 Voice → 5. System TTS (flutter_tts)
 ///
 /// Supports language-aware voice selection and Arabic-optimized profiles.
 class VoiceService {
@@ -25,7 +25,7 @@ class VoiceService {
   bool _isSpeaking = false;
   String? _currentProvider;
   String _currentLanguage = 'ar'; // Default to Arabic
-  TtsProvider _preferredProvider = TtsProvider.elevenLabs;
+  TtsProvider _preferredProvider = TtsProvider.groqOrpheus;
 
   /// Whether TTS is currently speaking.
   bool get isSpeaking => _isSpeaking;
@@ -95,7 +95,7 @@ class VoiceService {
     try {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(audioPath),
-        'model': 'whisper-large-v3',
+        'model': 'whisper-large-v3-turbo',
         'language': 'ar', // Default to Arabic, Whisper auto-detects anyway
         'response_format': 'verbose_json',
       });
@@ -246,6 +246,8 @@ class VoiceService {
 
   Future<TtsResult> _speakWithProvider(String text, TtsProvider provider, {String? languageCode}) async {
     switch (provider) {
+      case TtsProvider.groqOrpheus:
+        return _speakGroqOrpheus(text, languageCode: languageCode);
       case TtsProvider.elevenLabs:
         return _speakElevenLabs(text, languageCode: languageCode);
       case TtsProvider.openAI:
@@ -254,6 +256,54 @@ class VoiceService {
         return _speakBigModel(text);
       case TtsProvider.system:
         return _speakSystem(text);
+    }
+  }
+
+  /// Speak using Groq Orpheus Arabic Saudi TTS.
+  /// This is the highest-quality Arabic TTS available, natively trained
+  /// on Arabic Saudi dialect — perfect for Egyptian Arabic assistant.
+  Future<TtsResult> _speakGroqOrpheus(String text, {String? languageCode}) async {
+    if (!ApiKeys.hasGroq) throw VoiceException('Groq API key not configured for Orpheus TTS');
+
+    final lang = languageCode ?? _currentLanguage;
+    final bool isArabic = lang.toLowerCase().startsWith('ar');
+
+    // Use Arabic Saudi model for Arabic, English model for English
+    final model = isArabic
+        ? 'canopylabs/orpheus-arabic-saudi'
+        : 'canopylabs/orpheus-v1-english';
+
+    try {
+      final response = await _dio.post<List<int>>(
+        'https://api.groq.com/openai/v1/audio/speech',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${ApiKeys.groqApiKey}',
+            'Content-Type': 'application/json',
+          },
+          responseType: ResponseType.bytes,
+        ),
+        data: {
+          'model': model,
+          'input': text,
+          'voice': isArabic ? 'arabic_saudi' : 'alex',
+          'response_format': 'wav',
+        },
+      );
+
+      final audioBytes = Uint8List.fromList(response.data!);
+      // In real implementation: play audioBytes via audioplayers
+
+      return TtsResult(
+        provider: TtsProvider.groqOrpheus,
+        audioBytes: audioBytes,
+        text: text,
+        success: true,
+        languageCode: lang,
+        voiceName: isArabic ? 'Orpheus Arabic Saudi' : 'Orpheus English',
+      );
+    } on DioException catch (e) {
+      throw VoiceException('Groq Orpheus TTS failed: ${e.message}');
     }
   }
 
@@ -373,7 +423,7 @@ class VoiceService {
 
 // ── Data models ──
 
-enum TtsProvider { elevenLabs, openAI, bigModel, system }
+enum TtsProvider { groqOrpheus, elevenLabs, openAI, bigModel, system }
 
 class TranscriptionResult {
   final String text;

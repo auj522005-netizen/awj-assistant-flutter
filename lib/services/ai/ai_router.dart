@@ -61,13 +61,14 @@ class AIRouter {
       'openrouter': 'deepseek/deepseek-chat-v3-0324:free',
       'groq': 'llama-3.1-8b-instant',
       'gemini': 'gemini-2.5-flash',
-      'cerebras': 'llama-4-scout-17b',
+      'cerebras': 'gpt-oss-120b',
     },
     TaskType.mainConversation: {
       'bigmodel': 'glm-5-turbo',
       'openrouter': 'deepseek/deepseek-chat-v3-0324:free',
-      'groq': 'llama-4-scout-17b',
+      'groq': 'openai/gpt-oss-120b',
       'gemini': 'gemini-2.5-flash',
+      'cerebras': 'gpt-oss-120b',
       'openai': 'gpt-4o-mini',
     },
     TaskType.deepAnalysis: {
@@ -91,8 +92,9 @@ class AIRouter {
     TaskType.summarization: {
       'bigmodel': 'glm-4.5-air',
       'openrouter': 'google/gemma-4-12b-it:free',
-      'groq': 'llama-4-scout-17b',
+      'groq': 'openai/gpt-oss-20b',
       'gemini': 'gemini-2.5-flash',
+      'cerebras': 'gpt-oss-120b',
     },
     TaskType.creativeWriting: {
       'bigmodel': 'glm-5',

@@ -48,8 +48,11 @@ class GroqService {
       'gpt-oss-120b': 'openai/gpt-oss-120b',
       'gpt-oss-20b': 'openai/gpt-oss-20b',
       'qwen-3-32b': 'qwen/qwen3-32b',
-      'llama-3.3-70b': 'meta-llama/llama-3.3-70b-versatile',
-      'llama-3.1-8b': 'meta-llama/llama-3.1-8b-instant',
+      'llama-3.3-70b': 'llama-3.3-70b-versatile',
+      'llama-3.1-8b': 'llama-3.1-8b-instant',
+      'compound': 'groq/compound',
+      'compound-mini': 'groq/compound-mini',
+      'kimi-k2': 'moonshotai/kimi-k2-instruct-0905',
     };
     return prefixMap[model] ?? model;
   }
@@ -218,7 +221,7 @@ class GroqService {
 
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(filePath),
-        'model': 'whisper-large-v3',
+        'model': 'whisper-large-v3-turbo',
         'language': language,
         'response_format': 'json',
       });

@@ -9,8 +9,8 @@ import 'package:owj_assistant/models/ai_model.dart';
 
 /// Cerebras API service for the OWJ Assistant.
 ///
-/// Supports model: llama-4-scout-17b.
-/// Ultra-fast inference for quick responses.
+/// Supports models: gpt-oss-120b (Production), zai-glm-4.7 (Preview).
+/// Ultra-fast inference at 1000-3000 tokens/second on Cerebras hardware.
 class CerebrasService {
   CerebrasService({Dio? dio})
       : _dio = dio ?? Dio(BaseOptions(
@@ -31,16 +31,24 @@ class CerebrasService {
   static List<AIModel> get supportedModels =>
       getModelsByProvider(AIProvider.cerebras);
 
-  /// Default model.
-  static const String defaultModel = 'llama-4-scout-17b';
+  /// Default model — gpt-oss-120b is the current production model on Cerebras.
+  static const String defaultModel = 'gpt-oss-120b';
 
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 2);
 
   /// Get the full Cerebras model ID.
+  /// As of 2026, Cerebras public API supports:
+  /// - gpt-oss-120b (Production, ~3000 tok/s)
+  /// - zai-glm-4.7 (Preview, ~1000 tok/s)
   String _fullModelId(String model) {
     const modelMap = {
-      'llama-4-scout-17b': 'llama-4-scout-17b-16e-instruct',
+      'gpt-oss-120b': 'gpt-oss-120b',
+      'zai-glm-4.7': 'zai-glm-4.7',
+      // Deprecated models (will fail, kept for migration):
+      'llama-4-scout-17b': 'gpt-oss-120b', // migrated
+      'llama-3.3-70b': 'gpt-oss-120b', // migrated
+      'qwen-3-32b': 'gpt-oss-120b', // migrated
     };
     return modelMap[model] ?? model;
   }
