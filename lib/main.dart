@@ -48,14 +48,18 @@ void main() async {
   ));
 
   // Initialize dotenv (load .env if available, merge with environment)
+  // Priority: --dart-define > .env file > Platform.environment
   try {
+    // Try loading from assets first (when bundled with the app)
     await dotenv.load(fileName: '.env', mergeWith: Platform.environment);
+    debugPrint('✅ .env loaded from assets');
   } catch (_) {
-    // .env file is optional — env vars from system/Codemagic will be used
+    // .env not bundled as asset — try loading from file system (local dev / Codemagic)
     try {
       await dotenv.load(mergeWith: Platform.environment);
+      debugPrint('✅ .env loaded from platform environment');
     } catch (_) {
-      debugPrint('ملاحظة: ملف .env مش موجود');
+      debugPrint('⚠️ .env not found — relying on --dart-define and Platform.environment');
     }
   }
 

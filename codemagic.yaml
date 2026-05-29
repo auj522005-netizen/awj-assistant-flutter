@@ -29,7 +29,7 @@ workflows:
           fi
       - name: Inject API keys into .env (backup for dotenv)
         script: |
-          cat > "$CM_BUILD_DIR/.env" << 'ENVEOF'
+          cat > "$CM_BUILD_DIR/.env" << ENVEOF
           GEMINI_API_KEY=${GEMINI_API_KEY:-}
           GROQ_API_KEY=${GROQ_API_KEY:-}
           CEREBRAS_API_KEY=${CEREBRAS_API_KEY:-}
@@ -51,9 +51,26 @@ workflows:
           ENVEOF
           # Remove any leading/trailing whitespace from keys
           sed -i 's/^[[:space:]]*//' "$CM_BUILD_DIR/.env"
+          # Verify .env was created with actual values
+          echo "📋 .env file created. Checking first key..."
+          head -1 "$CM_BUILD_DIR/.env" | cut -c1-30
+      - name: Clean Flutter build cache
+        script: |
+          flutter clean
       - name: Get Flutter packages
         script: |
-          flutter packages pub get
+          flutter pub get
+      - name: Verify version and build info
+        script: |
+          echo "📦 Building OWJ Assistant v2.3.0+6"
+          echo "🔑 Checking API keys availability..."
+          for key in GEMINI_API_KEY GROQ_API_KEY BIGMODEL_API_KEY OPENROUTER_API_KEY CEREBRAS_API_KEY; do
+            if [ -n "${!key}" ]; then
+              echo "  ✅ $key: set (${#!key} chars)"
+            else
+              echo "  ❌ $key: NOT SET"
+            fi
+          done
       - name: Build APK with API keys via dart-define
         script: |
           flutter build apk --release \
@@ -75,6 +92,8 @@ workflows:
             --dart-define=FIREBASE_API_KEY="${FIREBASE_API_KEY:-}" \
             --dart-define=FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID:-}" \
             --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}"
+          echo "✅ APK built successfully!"
+          ls -lh "$CM_BUILD_DIR/build/app/outputs/flutter-apk/"*.apk
       - name: Build AAB with API keys via dart-define
         script: |
           flutter build appbundle --release \
@@ -96,6 +115,7 @@ workflows:
             --dart-define=FIREBASE_API_KEY="${FIREBASE_API_KEY:-}" \
             --dart-define=FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID:-}" \
             --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}"
+          echo "✅ AAB built successfully!"
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/*.aab

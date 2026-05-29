@@ -67,9 +67,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - .env
-  # Note: .env file is optional for local dev (create from .env.example).
+  # Note: .env file is NOT listed as an asset to avoid build failures when missing.
+  # Instead, it's loaded dynamically in main.dart with a try/catch fallback.
   # For Codemagic builds, API keys are injected via --dart-define flags
-  # which are baked into the binary at compile time (more reliable).
-  # The .env asset is a backup source for flutter_dotenv.
+  # which are baked into the binary at compile time (most reliable).
+  # The .env file is also created by Codemagic scripts as a backup source.
+  # For local dev, create .env manually — it will be loaded via flutter_dotenv.
