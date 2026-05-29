@@ -63,3 +63,5 @@ android/app/google-services.json
 .gradle/
 android/.gradle/
 .env
+owj_assistant/.env
+.env
