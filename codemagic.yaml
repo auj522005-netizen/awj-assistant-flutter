@@ -1,0 +1,70 @@
+workflows:
+  android-release:
+    name: OWJ Assistant Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      android_signing:
+        - upload_keystore
+      groups:
+        - owj_api_keys
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Set up local properties
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Prepare signing config
+        script: |
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo "storePassword=$CM_KEYSTORE_PASSWORD" > "$CM_BUILD_DIR/android/key.properties"
+            echo "keyPassword=$CM_KEY_ALIAS_PASSWORD" >> "$CM_BUILD_DIR/android/key.properties"
+            echo "keyAlias=$CM_KEY_ALIAS" >> "$CM_BUILD_DIR/android/key.properties"
+            echo "storeFile=$CM_KEYSTORE_PATH" >> "$CM_BUILD_DIR/android/key.properties"
+          fi
+      - name: Inject API keys into .env
+        script: |
+          cat > "$CM_BUILD_DIR/.env" << ENVEOF
+          GEMINI_API_KEY=${GEMINI_API_KEY:-}
+          GROQ_API_KEY=${GROQ_API_KEY:-}
+          CEREBRAS_API_KEY=${CEREBRAS_API_KEY:-}
+          OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+          OPENAI_API_KEY=${OPENAI_API_KEY:-}
+          BIGMODEL_API_KEY=${BIGMODEL_API_KEY:-}
+          MEM0_API_KEY=${MEM0_API_KEY:-}
+          TAVILY_API_KEY=${TAVILY_API_KEY:-}
+          TAVILY_MCP_KEY=${TAVILY_MCP_KEY:-}
+          ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+          GITHUB_TOKEN=${GITHUB_TOKEN:-}
+          NOTION_TOKEN=${NOTION_TOKEN:-}
+          YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
+          GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID:-}
+          GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET:-}
+          FIREBASE_API_KEY=${FIREBASE_API_KEY:-}
+          FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+          FIREBASE_APP_ID=${FIREBASE_APP_ID:-}
+          ENVEOF
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Build APK
+        script: |
+          flutter build apk --release
+      - name: Build AAB
+        script: |
+          flutter build appbundle --release
+    artifacts:
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/*.aab
+    publishing:
+      email:
+        recipients:
+          - mohannadcontento@gmail.com
+        notify:
+          success: true
+          failure: true
