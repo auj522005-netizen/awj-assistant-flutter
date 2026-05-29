@@ -29,7 +29,7 @@ class GeminiService {
       getModelsByProvider(AIProvider.gemini);
 
   /// Default model for general use.
-  static const String defaultModel = 'gemini-2.5-flash';
+  static const String defaultModel = 'gemini-3.5-flash';
 
   int _retryCount = 0;
   static const int _maxRetries = 3;

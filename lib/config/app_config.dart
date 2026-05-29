@@ -27,10 +27,10 @@ class AppConfig {
   static const String appTaglineAr = 'أوج — مساعدك الذكي المصري';
 
   /// Current version
-  static const String version = '2.1.0';
+  static const String version = '2.2.0';
 
   /// Build number
-  static const int buildNumber = 2;
+  static const int buildNumber = 5;
 
   /// Default locale
   static const String defaultLocale = 'ar_EG';
@@ -120,6 +120,22 @@ const List<String> fallbackProviderOrder = [
 final List<AIModel> allModels = [
   // ═══ Google Gemini ═════════════════════════════════════════════════════════
   const AIModel(
+    id: 'gemini:gemini-3.5-flash',
+    provider: AIProvider.gemini,
+    modelId: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    nameAr: 'جيميناي 3.5 فلاش',
+    tier: ModelTier.free,
+    speed: ModelSpeed.fast,
+    quality: ModelQuality.excellent,
+    supportsStreaming: true,
+    supportsVision: true,
+    contextWindow: '1M',
+    maxTokens: 1048576,
+    costPer1kTokens: 0.0,
+    description: 'أحدث موديل جوجل (مايو 2026) — أقوى من 3.1 برو في الكود والعملاء!',
+  ),
+  const AIModel(
     id: 'gemini:gemini-3.1-flash-lite',
     provider: AIProvider.gemini,
     modelId: 'gemini-3.1-flash-lite',
@@ -133,7 +149,7 @@ final List<AIModel> allModels = [
     contextWindow: '1M',
     maxTokens: 1048576,
     costPer1kTokens: 0.0,
-    description: 'أحدث وأسرع موديل جوجل — جيل 3.1 فلاش لايت مجاني',
+    description: 'أرخص وأسرع موديل — مثالي للمهام البسيطة والكميات الكبيرة',
   ),
   const AIModel(
     id: 'gemini:gemini-3-flash-preview',
@@ -149,23 +165,7 @@ final List<AIModel> allModels = [
     contextWindow: '1M',
     maxTokens: 1048576,
     costPer1kTokens: 0.0,
-    description: 'جيل 3 فلاش — أحدث جيل من جوجل بتفكير عميق',
-  ),
-  const AIModel(
-    id: 'gemini:gemini-2.5-pro',
-    provider: AIProvider.gemini,
-    modelId: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    nameAr: 'جيميناي 2.5 برو',
-    tier: ModelTier.free,
-    speed: ModelSpeed.medium,
-    quality: ModelQuality.excellent,
-    supportsStreaming: true,
-    supportsVision: true,
-    contextWindow: '1M',
-    maxTokens: 1048576,
-    costPer1kTokens: 0.0,
-    description: 'أقوى موديل جيميناي مستقر — للتحليلات العميقة والكود',
+    description: 'جيل 3 فلاش — الموديل الأساسي في تطبيق جيميناي',
   ),
   const AIModel(
     id: 'gemini:gemini-2.5-flash',
@@ -181,30 +181,14 @@ final List<AIModel> allModels = [
     contextWindow: '1M',
     maxTokens: 1048576,
     costPer1kTokens: 0.0,
-    description: 'أفضل توازن بين السرعة والجودة — المستقر',
+    description: 'أفضل توازن بين السعر والأداء — مستقر ومجاني',
   ),
   const AIModel(
-    id: 'gemini:gemini-3-pro',
+    id: 'gemini:gemini-2.5-flash-lite',
     provider: AIProvider.gemini,
-    modelId: 'gemini-3-pro',
-    name: 'Gemini 3 Pro',
-    nameAr: 'جيميناي 3 برو',
-    tier: ModelTier.free,
-    speed: ModelSpeed.medium,
-    quality: ModelQuality.excellent,
-    supportsStreaming: true,
-    supportsVision: true,
-    contextWindow: '1M',
-    maxTokens: 1048576,
-    costPer1kTokens: 0.0,
-    description: 'جيل 3 برو — موديل تفكير عميق من جوجل',
-  ),
-  const AIModel(
-    id: 'gemini:gemini-2.0-flash',
-    provider: AIProvider.gemini,
-    modelId: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    nameAr: 'جيميناي 2.0 فلاش',
+    modelId: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
+    nameAr: 'جيميناي 2.5 فلاش لايت',
     tier: ModelTier.free,
     speed: ModelSpeed.fast,
     quality: ModelQuality.great,
@@ -213,7 +197,23 @@ final List<AIModel> allModels = [
     contextWindow: '1M',
     maxTokens: 1048576,
     costPer1kTokens: 0.0,
-    description: 'الموديل القديم — لسه شغال لكن بينتهي يونيو 2026',
+    description: 'أرخص موديل قوي في السوق — 5 أضعاف سرعة برو',
+  ),
+  const AIModel(
+    id: 'gemini:gemini-2.5-pro',
+    provider: AIProvider.gemini,
+    modelId: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    nameAr: 'جيميناي 2.5 برو',
+    tier: ModelTier.free,
+    speed: ModelSpeed.medium,
+    quality: ModelQuality.excellent,
+    supportsStreaming: true,
+    supportsVision: true,
+    contextWindow: '1M',
+    maxTokens: 1048576,
+    costPer1kTokens: 0.0,
+    description: 'أقوى موديل جيميناي مجاني — للتحليلات العميقة (50 طلب/يوم)',
   ),
 
   // ═══ Groq ══════════════════════════════════════════════════════════════════
