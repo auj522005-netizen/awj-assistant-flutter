@@ -92,22 +92,23 @@ const Map<AiTask, String> aiTaskLabelsEn = {
 };
 
 /// Default model assignment for each AI task
+/// Prioritizes confirmed working providers: BigModel and OpenRouter
 const Map<AiTask, String> defaultTaskModels = {
-  AiTask.quickResponse:     'groq:openai/gpt-oss-20b',
-  AiTask.mainConversation:  'gemini:gemini-3.1-flash-lite',
-  AiTask.deepAnalysis:      'openrouter:google/gemma-4-31b-it:free',
-  AiTask.patternDetection:  'groq:meta-llama/llama-4-scout-17b-16e-instruct',
+  AiTask.quickResponse:     'bigmodel:glm-5-turbo',
+  AiTask.mainConversation:  'bigmodel:glm-5-turbo',
+  AiTask.deepAnalysis:      'openrouter:deepseek/deepseek-r1:free',
+  AiTask.patternDetection:  'bigmodel:glm-4.5-air',
   AiTask.weeklyReport:      'openrouter:deepseek/deepseek-chat-v3-0324:free',
-  AiTask.batchProcessing:   'groq:qwen/qwen3-32b',
+  AiTask.batchProcessing:   'openrouter:qwen/qwen3-32b:free',
   AiTask.longContext:       'bigmodel:glm-5-turbo',
 };
 
 /// Fallback order by provider — used when primary model is unavailable
 const List<String> fallbackProviderOrder = [
-  'gemini',
-  'groq',
-  'openrouter',
   'bigmodel',
+  'openrouter',
+  'groq',
+  'gemini',
   'openai',
 ];
 

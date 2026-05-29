@@ -4,7 +4,7 @@
 ///
 /// Initializes flutter_dotenv, StorageService, and wraps the app
 /// with MultiProvider. Supports RTL Arabic as primary language.
-/// Main screen uses bottom navigation with 5 tabs.
+/// Main screen uses bottom navigation with 6 tabs.
 ///
 /// ═══════════════════════════════════════════════════════════════════════════════
 
@@ -23,9 +23,11 @@ import 'package:owj_assistant/providers/chat_provider.dart';
 import 'package:owj_assistant/providers/app_provider.dart';
 import 'package:owj_assistant/screens/home_screen.dart';
 import 'package:owj_assistant/screens/chat_screen.dart';
+import 'package:owj_assistant/screens/tasks_screen.dart';
 import 'package:owj_assistant/screens/pillars_screen.dart';
 import 'package:owj_assistant/screens/skills_screen.dart';
 import 'package:owj_assistant/screens/memory_screen.dart';
+import 'package:owj_assistant/screens/settings_screen.dart';
 import 'package:owj_assistant/services/storage_service.dart';
 
 void main() async {
@@ -97,7 +99,7 @@ class OwjApp extends StatelessWidget {
   }
 }
 
-/// Main navigation shell with 5 bottom navigation tabs.
+/// Main navigation shell with 6 bottom navigation tabs.
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -112,9 +114,10 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _screens = const [
     HomeScreen(),
     ChatScreen(),
-    PillarsScreen(),
+    TasksScreen(),
     SkillsScreen(),
     MemoryScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -139,9 +142,9 @@ class _MainNavigationState extends State<MainNavigation> {
       activeIcon: Icons.chat,
     ),
     _TabConfig(
-      label: 'المحاور',
-      icon: Icons.bar_chart_outlined,
-      activeIcon: Icons.bar_chart,
+      label: 'مهام',
+      icon: Icons.checklist_outlined,
+      activeIcon: Icons.checklist_rounded,
     ),
     _TabConfig(
       label: 'المهارات',
@@ -152,6 +155,11 @@ class _MainNavigationState extends State<MainNavigation> {
       label: 'الذاكرة',
       icon: Icons.psychology_outlined,
       activeIcon: Icons.psychology,
+    ),
+    _TabConfig(
+      label: 'إعدادات',
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings,
     ),
   ];
 
@@ -171,6 +179,7 @@ class _MainNavigationState extends State<MainNavigation> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
+          type: BottomNavigationBarType.fixed,
           items: _tabs.map((tab) {
             final isSelected = _tabs.indexOf(tab) == _currentIndex;
             return BottomNavigationBarItem(

@@ -16,6 +16,9 @@ import 'package:provider/provider.dart';
 import 'package:owj_assistant/config/theme.dart';
 import 'package:owj_assistant/models/chat_message.dart';
 import 'package:owj_assistant/providers/chat_provider.dart';
+import 'package:owj_assistant/services/voice/voice_recorder_service.dart' show VoiceRecorderService, formatDuration;
+import 'package:owj_assistant/services/voice/voice_service.dart';
+import 'package:owj_assistant/config/api_keys.dart';
 import 'package:owj_assistant/widgets/chat_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -94,11 +97,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showVoiceInput(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('الإدخال الصوتي هيكون متاح قريب 🎤'),
-        duration: Duration(seconds: 2),
-      ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _VoiceInputSheet(),
     );
   }
 
@@ -503,10 +506,221 @@ class _InputBar extends StatelessWidget {
   }
 
   void _showVoiceInput(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('الإدخال الصوتي هيكون متاح قريب 🎤'),
-        duration: Duration(seconds: 2),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _VoiceInputSheet(),
+    );
+  }
+}
+
+// ─── Voice Input Sheet ─────────────────────────────────────────────────────────
+
+class _VoiceInputSheet extends StatefulWidget {
+  @override
+  State<_VoiceInputSheet> createState() => _VoiceInputSheetState();
+}
+
+class _VoiceInputSheetState extends State<_VoiceInputSheet> with SingleTickerProviderStateMixin {
+  final VoiceRecorderService _recorder = VoiceRecorderService();
+  final VoiceService _voiceService = VoiceService();
+  bool _isRecording = false;
+  bool _isTranscribing = false;
+  Duration _duration = Duration.zero;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _recorder.durationStream.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    });
+  }
+
+  @override
+  void dispose() {
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      // Stop recording
+      final path = await _recorder.stopRecording();
+      setState(() => _isRecording = false);
+
+      if (path != null) {
+        await _transcribe(path);
+      } else {
+        setState(() => _errorMessage = 'التسجيل فشل — جرب تاني');
+      }
+    } else {
+      // Start recording
+      setState(() => _errorMessage = null);
+      final path = await _recorder.startRecording();
+      if (path != null) {
+        setState(() => _isRecording = true);
+      } else {
+        setState(() => _errorMessage = 'الميكروفون مش متاح — اتصلح الصلاحيات');
+      }
+    }
+  }
+
+  Future<void> _transcribe(String audioPath) async {
+    setState(() => _isTranscribing = true);
+
+    try {
+      final result = await _voiceService.transcribeAudio(audioPath);
+      final text = result.text.trim();
+
+      if (text.isNotEmpty && mounted) {
+        Navigator.pop(context);
+        // Send the transcribed text as a message
+        final chatProvider = context.read<ChatProvider>();
+        chatProvider.messageController.text = text;
+        chatProvider.sendMessage(text);
+      } else if (mounted) {
+        setState(() => _errorMessage = 'مفهمتش الصوت — قول تاني أوضح');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = 'خطأ في التفريغ: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isTranscribing = false);
+      }
+    }
+  }
+
+  Future<void> _cancelRecording() async {
+    await _recorder.cancelRecording();
+    setState(() {
+      _isRecording = false;
+      _duration = Duration.zero;
+    });
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: OwjColors.surfaceElevated,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: OwjColors.textTertiary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Status
+          Text(
+            _isRecording
+                ? 'بنسمعك... 🎤'
+                : _isTranscribing
+                    ? 'بنفهم الصوت... 🧠'
+                    : 'اضغط عشان تسجل صوتك',
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _isRecording ? OwjColors.error : OwjColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Duration
+          if (_isRecording || _duration > Duration.zero)
+            Text(
+              formatDuration(_duration),
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 32,
+                fontWeight: FontWeight.w300,
+                color: OwjColors.textSecondary,
+              ),
+            ),
+
+          // Error message
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 13,
+                color: OwjColors.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Recording button
+          if (_isTranscribing)
+            const SizedBox(
+              width: 64,
+              height: 64,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: OwjColors.primary,
+              ),
+            )
+          else
+            GestureDetector(
+              onTapDown: (_) => _toggleRecording(),
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isRecording ? OwjColors.error : OwjColors.primary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_isRecording ? OwjColors.error : OwjColors.primary)
+                          .withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      spreadRadius: _isRecording ? 8 : 0,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // Cancel button (when recording)
+          if (_isRecording)
+            TextButton(
+              onPressed: _cancelRecording,
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14,
+                  color: OwjColors.textTertiary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

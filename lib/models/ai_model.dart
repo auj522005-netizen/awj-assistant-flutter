@@ -418,19 +418,19 @@ class ModelConfig {
   final List<String> fallbackOrder;
 
   const ModelConfig({
-    this.chatModel = 'gemini:gemini-3.1-flash-lite',
-    this.quickModel = 'groq:openai/gpt-oss-20b',
-    this.deepModel = 'openrouter:google/gemma-4-31b-it:free',
-    this.patternModel = 'groq:meta-llama/llama-4-scout-17b-16e-instruct',
+    this.chatModel = 'bigmodel:glm-5-turbo',
+    this.quickModel = 'bigmodel:glm-5-turbo',
+    this.deepModel = 'openrouter:deepseek/deepseek-r1:free',
+    this.patternModel = 'bigmodel:glm-4.5-air',
     this.weeklyReportModel = 'openrouter:deepseek/deepseek-chat-v3-0324:free',
-    this.batchModel = 'groq:qwen/qwen3-32b',
+    this.batchModel = 'openrouter:qwen/qwen3-32b:free',
     this.longContextModel = 'bigmodel:glm-5-turbo',
     this.autoFallback = true,
     this.fallbackOrder = const [
-      'gemini',
-      'groq',
-      'openrouter',
       'bigmodel',
+      'openrouter',
+      'groq',
+      'gemini',
       'openai',
     ],
   });
@@ -484,22 +484,23 @@ class ModelConfig {
   // ─── Serialization ──────────────────────────────────────────────────────
 
   factory ModelConfig.fromJson(Map<String, dynamic> json) => ModelConfig(
-        chatModel: json['chatModel'] as String? ?? 'gemini:gemini-3.1-flash-lite',
-        quickModel: json['quickModel'] as String? ?? 'groq:openai/gpt-oss-20b',
+        chatModel: json['chatModel'] as String? ?? 'bigmodel:glm-5-turbo',
+        quickModel: json['quickModel'] as String? ?? 'bigmodel:glm-5-turbo',
         deepModel: json['deepModel'] as String? ??
-            'openrouter:google/gemma-4-31b-it:free',
+            'openrouter:deepseek/deepseek-r1:free',
         patternModel: json['patternModel'] as String? ??
-            'groq:meta-llama/llama-4-scout-17b-16e-instruct',
+            'bigmodel:glm-4.5-air',
         weeklyReportModel: json['weeklyReportModel'] as String? ??
             'openrouter:deepseek/deepseek-chat-v3-0324:free',
-        batchModel: json['batchModel'] as String? ?? 'groq:qwen/qwen3-32b',
+        batchModel: json['batchModel'] as String? ??
+            'openrouter:qwen/qwen3-32b:free',
         longContextModel:
             json['longContextModel'] as String? ?? 'bigmodel:glm-5-turbo',
         autoFallback: json['autoFallback'] as bool? ?? true,
         fallbackOrder: (json['fallbackOrder'] as List<dynamic>?)
                 ?.map((e) => e as String)
                 .toList() ??
-            const ['gemini', 'groq', 'openrouter', 'bigmodel', 'openai'],
+            const ['bigmodel', 'openrouter', 'groq', 'gemini', 'openai'],
       );
 
   Map<String, dynamic> toJson() => {

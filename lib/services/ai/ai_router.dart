@@ -29,68 +29,75 @@ class AIRouter {
   final BigModelService bigmodel;
 
   /// Fallback chain order for provider selection.
+  /// Prioritizes confirmed working providers: BigModel and OpenRouter.
   static const List<String> _fallbackChain = [
-    'gemini',
-    'groq',
-    'openrouter',
     'bigmodel',
+    'openrouter',
+    'groq',
+    'gemini',
     'openai',
     'cerebras',
   ];
 
   /// Task type to preferred provider mapping.
+  /// Prioritizes confirmed working providers: BigModel and OpenRouter.
   static const Map<TaskType, String> _taskProviderMap = {
-    TaskType.quickResponse: 'groq',
-    TaskType.mainConversation: 'gemini',
+    TaskType.quickResponse: 'bigmodel',
+    TaskType.mainConversation: 'bigmodel',
     TaskType.deepAnalysis: 'openrouter',
     TaskType.codeGeneration: 'openrouter',
-    TaskType.translation: 'groq',
-    TaskType.summarization: 'gemini',
-    TaskType.creativeWriting: 'gemini',
-    TaskType.tts: 'openai',
+    TaskType.translation: 'bigmodel',
+    TaskType.summarization: 'bigmodel',
+    TaskType.creativeWriting: 'bigmodel',
+    TaskType.tts: 'bigmodel',
     TaskType.stt: 'groq',
   };
 
   /// Task type to model mapping per provider.
+  /// Uses confirmed working model IDs for each provider.
   static const Map<TaskType, Map<String, String>> _taskModelMap = {
     TaskType.quickResponse: {
-      'groq': 'llama-3.1-8b',
+      'bigmodel': 'glm-5-turbo',
+      'openrouter': 'deepseek/deepseek-chat-v3-0324:free',
+      'groq': 'llama-3.1-8b-instant',
       'gemini': 'gemini-2.5-flash',
       'cerebras': 'llama-4-scout-17b',
     },
     TaskType.mainConversation: {
-      'gemini': 'gemini-2.5-flash',
-      'groq': 'llama-4-scout-17b',
-      'openrouter': 'deepseek-v3',
       'bigmodel': 'glm-5-turbo',
+      'openrouter': 'deepseek/deepseek-chat-v3-0324:free',
+      'groq': 'llama-4-scout-17b',
+      'gemini': 'gemini-2.5-flash',
       'openai': 'gpt-4o-mini',
     },
     TaskType.deepAnalysis: {
-      'openrouter': 'deepseek-r1',
+      'openrouter': 'deepseek/deepseek-r1:free',
+      'bigmodel': 'glm-5.1',
       'gemini': 'gemini-2.5-pro',
-      'bigmodel': 'glm-5',
       'openai': 'o3',
     },
     TaskType.codeGeneration: {
-      'openrouter': 'qwen-3-coder',
-      'gemini': 'gemini-2.5-pro',
-      'groq': 'qwen-3-32b',
+      'openrouter': 'qwen/qwen3-coder:free',
       'bigmodel': 'glm-5.1',
+      'groq': 'qwen-3-32b',
+      'gemini': 'gemini-2.5-pro',
     },
     TaskType.translation: {
+      'bigmodel': 'glm-5-turbo',
+      'openrouter': 'qwen/qwen3-32b:free',
       'groq': 'llama-3.3-70b',
       'gemini': 'gemini-2.5-flash',
-      'openrouter': 'qwen-3-32b',
     },
     TaskType.summarization: {
-      'gemini': 'gemini-2.5-flash',
+      'bigmodel': 'glm-4.5-air',
+      'openrouter': 'google/gemma-4-12b-it:free',
       'groq': 'llama-4-scout-17b',
-      'openrouter': 'gemma-4-12b',
+      'gemini': 'gemini-2.5-flash',
     },
     TaskType.creativeWriting: {
+      'bigmodel': 'glm-5',
+      'openrouter': 'nousresearch/hermes-3-llama-3.1-405b:free',
       'gemini': 'gemini-2.5-pro',
-      'openrouter': 'hermes-3-405b',
-      'bigmodel': 'glm-5.1',
     },
   };
 

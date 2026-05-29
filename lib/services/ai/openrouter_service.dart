@@ -33,30 +33,37 @@ class OpenRouterService {
   static List<AIModel> get supportedModels =>
       getModelsByProvider(AIProvider.openrouter);
 
-  /// Default model for deep analysis tasks.
-  static const String defaultModel = 'deepseek-v3';
+  /// Default model for general use — confirmed free and reliable.
+  static const String defaultModel = 'deepseek/deepseek-chat-v3-0324:free';
 
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 2);
 
   /// Get the full OpenRouter model ID with provider prefix.
+  /// If the model already contains a '/', it's already a full ID.
   String _fullModelId(String model) {
+    // Already a full model ID with provider prefix
+    if (model.contains('/')) return model;
+
     const modelMap = {
-      'gemma-4-31b': 'google/gemma-4-31b',
-      'gemma-4-12b': 'google/gemma-4-12b',
-      'gemma-4-4b': 'google/gemma-4-4b',
-      'qwen-3-coder': 'qwen/qwen3-coder',
-      'ring-2.6-1t': 'ring-2/ring-2.6-1t',
-      'glm-4.5-air': 'thudm/glm-4.5-air',
-      'nemotron-3-super': 'nvidia/nemotron-3-super',
-      'gpt-oss-120b': 'openai/gpt-oss-120b',
-      'deepseek-r1': 'deepseek/deepseek-r1',
-      'deepseek-v3': 'deepseek/deepseek-v3-0324',
-      'qwen-3-235b': 'qwen/qwen3-235b-a22b',
-      'qwen-3-32b': 'qwen/qwen3-32b',
-      'hermes-3-405b': 'nousresearch/hermes-3-405b',
-      'mistral-small-3.1': 'mistralai/mistral-small-3.1-24b-instruct',
-      'phi-4-reasoning': 'microsoft/phi-4-reasoning',
+      'gemma-4-31b': 'google/gemma-4-31b-it:free',
+      'gemma-4-12b': 'google/gemma-4-12b-it:free',
+      'gemma-4-4b': 'google/gemma-4-4b-it:free',
+      'qwen-3-coder': 'qwen/qwen3-coder:free',
+      'ring-2.6-1t': 'inclusionai/ring-2.6-1t:free',
+      'glm-4.5-air': 'z-ai/glm-4.5-air:free',
+      'nemotron-3-super': 'nvidia/nemotron-3-super-120b-a12b:free',
+      'gpt-oss-120b': 'openai/gpt-oss-120b:free',
+      'gpt-oss-20b': 'openai/gpt-oss-20b:free',
+      'deepseek-r1': 'deepseek/deepseek-r1:free',
+      'deepseek-v3': 'deepseek/deepseek-chat-v3-0324:free',
+      'qwen-3-235b': 'qwen/qwen3-235b-a22b:free',
+      'qwen-3-32b': 'qwen/qwen3-32b:free',
+      'hermes-3-405b': 'nousresearch/hermes-3-llama-3.1-405b:free',
+      'mistral-small-3.1': 'mistralai/mistral-small-3.1-24b-instruct:free',
+      'phi-4-reasoning': 'microsoft/phi-4-reasoning:free',
+      'llama-3.3-70b': 'meta-llama/llama-3.3-70b-instruct:free',
+      'llama-3.2-3b': 'meta-llama/llama-3.2-3b-instruct:free',
     };
     return modelMap[model] ?? model;
   }

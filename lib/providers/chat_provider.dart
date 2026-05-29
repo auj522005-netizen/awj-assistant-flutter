@@ -63,10 +63,10 @@ class ChatProvider extends ChangeNotifier {
   bool _isStreaming = false;
 
   /// Currently selected AI provider name
-  String _currentProvider = 'gemini';
+  String _currentProvider = 'bigmodel';
 
   /// Currently selected AI model ID
-  String _currentModel = 'gemini:gemini-2.5-flash';
+  String _currentModel = 'bigmodel:glm-5-turbo';
 
   /// Conversation ID for storage
   String _conversationId = 'default';
