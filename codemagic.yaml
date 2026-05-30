@@ -1,24 +1,52 @@
 workflows:
   android-release:
-    name: OWJ Assistant Release
+    name: OWJ Assistant Release v2.3.0
     max_build_duration: 60
     instance_type: mac_mini_m2
+
+    # CRITICAL: Disable ALL caching to force fresh builds every time
+    # This ensures the APK always reflects the latest code changes
+    cache:
+      build_tools: false
+      flutter: false
+      cocoapods: false
+      npm: false
+      yarn: false
+
     environment:
       flutter: stable
       android_signing:
         - upload_keystore
       groups:
         - owj_api_keys
+      vars:
+        APP_VERSION: "2.3.0"
+        APP_BUILD: "6"
+
     triggering:
       events:
         - push
       branch_patterns:
         - pattern: main
           include: true
+
     scripts:
+      - name: Verify git checkout
+        script: |
+          echo "📂 Build directory: $CM_BUILD_DIR"
+          echo "🔀 Branch: $CM_BRANCH"
+          echo "📝 Commit: $CM_COMMIT"
+          echo "📅 Build: #$CM_BUILD_ID"
+          git log --oneline -5
+          echo ""
+          echo "📦 Expected version: v${APP_VERSION}+${APP_BUILD}"
+          grep "version:" "$CM_BUILD_DIR/pubspec.yaml"
+          grep "static const String version" "$CM_BUILD_DIR/lib/config/app_config.dart"
+
       - name: Set up local properties
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+
       - name: Prepare signing config
         script: |
           if [ -n "$CM_KEYSTORE" ]; then
@@ -27,6 +55,7 @@ workflows:
             echo "keyAlias=$CM_KEY_ALIAS" >> "$CM_BUILD_DIR/android/key.properties"
             echo "storeFile=$CM_KEYSTORE_PATH" >> "$CM_BUILD_DIR/android/key.properties"
           fi
+
       - name: Inject API keys into .env (backup for dotenv)
         script: |
           cat > "$CM_BUILD_DIR/.env" << ENVEOF
@@ -49,20 +78,23 @@ workflows:
           FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
           FIREBASE_APP_ID=${FIREBASE_APP_ID:-}
           ENVEOF
-          # Remove any leading/trailing whitespace from keys
-          sed -i 's/^[[:space:]]*//' "$CM_BUILD_DIR/.env"
-          # Verify .env was created with actual values
-          echo "📋 .env file created. Checking first key..."
-          head -1 "$CM_BUILD_DIR/.env" | cut -c1-30
-      - name: Clean Flutter build cache
+          # Remove any leading/trailing whitespace from keys (macOS sed)
+          sed -i '' 's/^[[:space:]]*//' "$CM_BUILD_DIR/.env"
+          echo "📋 .env file created."
+
+      - name: Full clean - remove all build artifacts
         script: |
+          cd "$CM_BUILD_DIR"
+          rm -rf build/ .dart_tool/ .flutter-plugins .flutter-plugins-dependencies
           flutter clean
+
       - name: Get Flutter packages
         script: |
           flutter pub get
+
       - name: Verify version and build info
         script: |
-          echo "📦 Building OWJ Assistant v2.3.0+6"
+          echo "📦 Building OWJ Assistant v${APP_VERSION}+${APP_BUILD}"
           echo "🔑 Checking API keys availability..."
           for key in GEMINI_API_KEY GROQ_API_KEY BIGMODEL_API_KEY OPENROUTER_API_KEY CEREBRAS_API_KEY; do
             if [ -n "${!key}" ]; then
@@ -71,6 +103,11 @@ workflows:
               echo "  ❌ $key: NOT SET"
             fi
           done
+          echo ""
+          echo "🔍 Verifying app code will show correct version..."
+          grep "version = " "$CM_BUILD_DIR/lib/config/app_config.dart"
+          grep "buildNumber = " "$CM_BUILD_DIR/lib/config/app_config.dart"
+
       - name: Build APK with API keys via dart-define
         script: |
           flutter build apk --release \
@@ -94,6 +131,7 @@ workflows:
             --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}"
           echo "✅ APK built successfully!"
           ls -lh "$CM_BUILD_DIR/build/app/outputs/flutter-apk/"*.apk
+
       - name: Build AAB with API keys via dart-define
         script: |
           flutter build appbundle --release \
@@ -116,9 +154,11 @@ workflows:
             --dart-define=FIREBASE_PROJECT_ID="${FIREBASE_PROJECT_ID:-}" \
             --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}"
           echo "✅ AAB built successfully!"
+
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/*.aab
+
     publishing:
       email:
         recipients:
